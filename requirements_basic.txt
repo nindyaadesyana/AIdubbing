@@ -1,0 +1,12 @@
+flask
+flask-cors
+librosa
+pydub
+numpy
+scipy
+soundfile
+ffmpeg-python
+gtts
+tensorboard
+coqpit>=0.0.17
+trainer>=0.0.32

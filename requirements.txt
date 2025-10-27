@@ -1,0 +1,15 @@
+flask
+flask-cors
+librosa
+pydub
+numpy
+scipy
+soundfile
+ffmpeg-python
+TTS>=0.22.0
+torch>=1.13.0
+torchaudio>=0.13.0
+trainer>=0.0.32
+coqpit>=0.0.17
+gtts
+tensorboard

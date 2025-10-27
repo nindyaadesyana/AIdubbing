@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - AI Dubbing</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .admin-header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-card i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card.users i { color: #007bff; }
+        .stat-card.activities i { color: #28a745; }
+        .stat-card.ips i { color: #ffc107; }
+        .stat-card.recent i { color: #dc3545; }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .logs-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .filter-controls select,
+        .filter-controls input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .logs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        .logs-table th,
+        .logs-table td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .logs-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .logs-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .activity-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .activity-login { background: #d4edda; color: #155724; }
+        .activity-logout { background: #f8d7da; color: #721c24; }
+        .activity-register { background: #cce5ff; color: #004085; }
+        .activity-upload { background: #d1ecf1; color: #0c5460; }
+        .activity-train { background: #fff3cd; color: #856404; }
+        .activity-generate { background: #e2e3e5; color: #383d41; }
+        .activity-change_password { background: #ffeaa7; color: #6c5ce7; }
+        .activity-view_passwords { background: #fab1a0; color: #e17055; }
+        .activity-delete_voice { background: #ff7675; color: #d63031; }
+        .activity-admin_change_password { background: #fd79a8; color: #e84393; }
+        .activity-delete_user { background: #fdcb6e; color: #e17055; }
+        
+        .ip-info {
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+        
+        .public-ip { color: #007bff; }
+        .private-ip { color: #28a745; }
+        
+        .refresh-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+        
+        .activity-details {
+            font-size: 0.8rem;
+            color: #666;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .back-btn:hover {
+            background: #5a6268;
+            color: white;
+        }
+        
+        .user-activity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .user-activity-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .user-activity-card h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .activity-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .stat-icon {
+            font-size: 1.2rem;
+        }
+        
+        .stat-count {
+            font-weight: bold;
+            color: #007bff;
+            min-width: 20px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.8rem;
+        }
+        
+        .total-activity {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Back to Main App
+        </a>
+        
+        <div class="admin-header">
+            <h1><i class="fas fa-shield-alt"></i> Admin Dashboard</h1>
+            <p>Activity Monitoring & System Statistics</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card users">
+                <i class="fas fa-users"></i>
+                <div class="stat-number">{{ stats.unique_users or 0 }}</div>
+                <div class="stat-label">Unique Users</div>
+            </div>
+            
+            <div class="stat-card activities">
+                <i class="fas fa-chart-line"></i>
+                <div class="stat-number">{{ stats.total_activities or 0 }}</div>
+                <div class="stat-label">Total Activities</div>
+            </div>
+            
+            <div class="stat-card ips">
+                <i class="fas fa-globe"></i>
+                <div class="stat-number">{{ stats.unique_ips or 0 }}</div>
+                <div class="stat-label">Unique IPs</div>
+            </div>
+            
+            <div class="stat-card recent">
+                <i class="fas fa-clock"></i>
+                <div class="stat-number">{{ stats.recent_activities_24h or 0 }}</div>
+                <div class="stat-label">Last 24 Hours</div>
+            </div>
+        </div>
+        
+        <!-- User Activity Summary -->
+        <div class="logs-container" style="margin-bottom: 30px;">
+            <div class="logs-header">
+                <h2><i class="fas fa-chart-pie"></i> User Activity Summary</h2>
+            </div>
+            
+            <div class="activity-summary">
+                {% set activity_counts = {} %}
+                {% for log in logs %}
+                    {% if log.username not in activity_counts %}
+                        {% set _ = activity_counts.update({log.username: {'login': 0, 'upload': 0, 'train': 0, 'generate': 0, 'total': 0}}) %}
+                    {% endif %}
+                    {% if log.activity in ['login', 'upload', 'train', 'generate'] %}
+                        {% set _ = activity_counts[log.username].update({log.activity: activity_counts[log.username][log.activity] + 1}) %}
+                    {% endif %}
+                    {% set _ = activity_counts[log.username].update({'total': activity_counts[log.username]['total'] + 1}) %}
+                {% endfor %}
+                
+                <div class="user-activity-grid">
+                    {% for username, activities in activity_counts.items() %}
+                    <div class="user-activity-card">
+                        <h4><i class="fas fa-user"></i> {{ username }}</h4>
+                        <div class="activity-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">🔑</span>
+                                <span class="stat-count">{{ activities.login }}</span>
+                                <span class="stat-label">Logins</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📤</span>
+                                <span class="stat-count">{{ activities.upload }}</span>
+                                <span class="stat-label">Uploads</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">🧠</span>
+                                <span class="stat-count">{{ activities.train }}</span>
+                                <span class="stat-label">Trainings</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">🎤</span>
+                                <span class="stat-count">{{ activities.generate }}</span>
+                                <span class="stat-label">Generations</span>
+                            </div>
+                        </div>
+                        <div class="total-activity">
+                            Total Activities: <strong>{{ activities.total }}</strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="logs-container">
+            <div class="logs-header">
+                <h2><i class="fas fa-list"></i> Detailed Activity Logs</h2>
+                <div class="filter-controls">
+                    <a href="/admin/users" class="btn-secondary modern-btn" style="margin-right: 10px;">
+                        <i class="fas fa-users"></i> Manage Users
+                    </a>
+                    <a href="/admin/view-passwords" class="btn-danger modern-btn" style="margin-right: 10px;">
+                        <i class="fas fa-eye"></i> View Passwords
+                    </a>
+                    <select id="userFilter" onchange="filterLogs()">
+                        <option value="">All Users</option>
+                        {% for user in unique_users %}
+                        <option value="{{ user }}">{{ user }}</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <select id="activityFilter" onchange="filterLogs()">
+                        <option value="">All Activities</option>
+                        <option value="login">🔑 Login</option>
+                        <option value="logout">🚪 Logout</option>
+                        <option value="register">👤 Register</option>
+                        <option value="upload">📤 Upload Voice</option>
+                        <option value="train">🧠 Train Model</option>
+                        <option value="generate">🎤 Generate Speech</option>
+                        <option value="change_password">🔐 Change Password</option>
+                        <option value="view_passwords">👁️ View Passwords</option>
+                        <option value="delete_voice">🗑️ Delete Voice</option>
+                        <option value="admin_change_password">🔑 Admin Change Password</option>
+                        <option value="delete_user">❌ Delete User</option>
+                    </select>
+                    
+                    <button class="refresh-btn" onclick="refreshLogs()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table class="logs-table" id="logsTable">
+                    <thead>
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>User</th>
+                            <th>Activity</th>
+                            <th>IP Address</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr data-user="{{ log.username }}" data-activity="{{ log.activity }}">
+                            <td>
+                                <div>{{ log.date }}</div>
+                                <div style="font-size: 0.8rem; color: #666;">{{ log.time }}</div>
+                            </td>
+                            <td>
+                                <strong>{{ log.username }}</strong>
+                            </td>
+                            <td>
+                                <span class="activity-badge activity-{{ log.activity }}">
+                                    {% if log.activity == 'login' %}🔑 Login
+                                    {% elif log.activity == 'logout' %}🚪 Logout
+                                    {% elif log.activity == 'register' %}👤 Register
+                                    {% elif log.activity == 'upload' %}📤 Upload
+                                    {% elif log.activity == 'train' %}🧠 Train
+                                    {% elif log.activity == 'generate' %}🎤 Generate
+                                    {% elif log.activity == 'change_password' %}🔐 Change Password
+                                    {% elif log.activity == 'view_passwords' %}👁️ View Passwords
+                                    {% elif log.activity == 'delete_voice' %}🗑️ Delete Voice
+                                    {% elif log.activity == 'admin_change_password' %}🔑 Admin Change Password
+                                    {% elif log.activity == 'delete_user' %}❌ Delete User
+                                    {% else %}{{ log.activity.title() }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="ip-info">
+                                    <div class="public-ip">Public: {{ log.public_ip }}</div>
+                                    <div class="private-ip">Private: {{ log.private_ip }}</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="activity-details">
+                                    {% if log.details %}
+                                        {% for key, value in log.details.items() %}
+                                            <div>{{ key }}: {{ value }}</div>
+                                        {% endfor %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if not logs %}
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                <p>No activity logs found</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        function filterLogs() {
+            const userFilter = document.getElementById('userFilter').value;
+            const activityFilter = document.getElementById('activityFilter').value;
+            const rows = document.querySelectorAll('#logsTable tbody tr');
+            
+            rows.forEach(row => {
+                const user = row.getAttribute('data-user');
+                const activity = row.getAttribute('data-activity');
+                
+                const userMatch = !userFilter || user === userFilter;
+                const activityMatch = !activityFilter || activity === activityFilter;
+                
+                if (userMatch && activityMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        function refreshLogs() {
+            window.location.reload();
+        }
+        
+        // Auto refresh every 30 seconds
+        setInterval(refreshLogs, 30000);
+    </script>
+</body>
+</html>
